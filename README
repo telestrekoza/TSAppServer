@@ -1,0 +1,6 @@
+Nodejs based web/application server. Used for feature projects on telestrekoza.com
+
+
+Requirements:
+
+modules folder need cookie-node module cloned from github
