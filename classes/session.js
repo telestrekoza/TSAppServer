@@ -119,10 +119,14 @@ S.prototype.set = function( key, value ) {
 };
 
 S.prototype.get = function(key) {
-    if(!key) {
-	return this.data;
+    var data = this.data;
+    if(!data){
+    	return null;
     }
-    return this.data[key];
+    if(!key) {
+		return data;
+    }
+    return data[key];
 };
 
 S.prototype.getID = function() {
