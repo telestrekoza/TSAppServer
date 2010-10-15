@@ -1,5 +1,3 @@
-#!/usr/bin/node
-
 (function() {
 
 var config	= require('./config').Config,
