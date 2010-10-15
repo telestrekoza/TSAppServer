@@ -3,7 +3,7 @@
 (function() {
 
 var config = {
-    VERSION	: "0.3",
+    VERSION	: "0.4",
     host	: "127.0.0.1",
     port	: 28080,
     INDEX	: 'index.js',
