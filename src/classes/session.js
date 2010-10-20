@@ -91,17 +91,19 @@ S.prototype.start = function(expires, path) {
 
 S.prototype.destroy = function(refresh) {
     if(!this.sessionID) {
-	return;
+		return;
     }
     var fs = require('fs'),
-	fileName =  this._getSessionFileName();
+		fileName =  this._getSessionFileName();
+    
     try {
     	fs.unlink(fileName);
-    }catch(e) {}
+    } catch(e) {}
+    
     this.sessionID = null;
     this.data = null;
     if(!refresh) {
-        S.__clearCookie( S.COOKIE_NAME, {path: this._cookiePath} );
+    	S.__clearCookie( S.COOKIE_NAME, {path: this._cookiePath} );
     }
 };
 
