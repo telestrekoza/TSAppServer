@@ -1,7 +1,7 @@
 (function() {
 
 var config	= require('./config').Config,
-    sys		= require('sys'),
+    sys		= require('util'),
     http	= require('http'),
     CustomEvent	= require('events').EventEmitter,
     LIBPATH	= config.DOCROOT+'/node/lib',

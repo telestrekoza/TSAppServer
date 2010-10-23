@@ -8,7 +8,7 @@ Base.extend(T, Base.JsonController);
 
 T.prototype.doBody = function() {
     var jsonBuf = [],
-	sys = require('sys'),
+	sys = require('util'),
 	idx = 0;
     jsonBuf[idx++]  = '[';
     jsonBuf[idx++]  = '{"Hallo":"World!!!"}';

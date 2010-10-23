@@ -67,7 +67,7 @@ S.prototype.start = function(expires, path) {
     		sData = fs.statSync(fileName);
     		count++;
     		if(count > S.MAX_TRY_COUNT) {
-    			require('sys').log("to much tryies to create session");
+    			require('util').log("to much tryies to create session");
     			sessionFileExist = false;
     			return false;
     		}

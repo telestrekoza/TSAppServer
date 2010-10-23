@@ -116,7 +116,6 @@ Y.extend = function(r, s, px, sx) {
 
 Y.loadFile =function(fileName) {
 	var fs = require('fs'),
-		sys = require('sys'),
 		path = require('path'),
 		workingDir = process.cwd();
 		content = fs.readFileSync( fileName).toString(),
@@ -133,7 +132,7 @@ Y.loadFile =function(fileName) {
 	process.chdir(path.dirname(path.normalize(fileName)));
 	Script.runInNewContext( content, sandbox, fileName);
 	if(!sandbox.exports) {
-		require('sys').log("no export in "+fileName);
+		require('util').log("no export in "+fileName);
 		return null;
 	}
 	process.chdir(workingDir);

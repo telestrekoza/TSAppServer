@@ -37,8 +37,7 @@ H.prototype.finalize = function() {
     if(this.server) {
 	this.server.emit(H.FINISH);
     } else {
-	var sys = require('sys');
-	sys.log("no this.server");
+	require('util').log("no this.server");
     }
 };
 

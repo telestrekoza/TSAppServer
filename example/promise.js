@@ -7,7 +7,7 @@ T = function() {
 Base.extend( T, Base.HtmlController);
 
 T.prototype.doBody = function() {
-    var sys = require('sys'),
+    var sys = require('util'),
 	buf = [],
 	values = [],
 	idx = 0;
