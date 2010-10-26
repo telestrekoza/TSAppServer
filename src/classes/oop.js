@@ -88,7 +88,7 @@ Y.mix = function(r, s, ov, wl, mode, merge) {
 
 Y.extend = function(r, s, px, sx) {
     if (!s||!r) {
-	throw "extend failed, verify dependencies";
+	   throw "extend failed, verify dependencies";
     }
     var sp = s.prototype, rp=Y.Object(sp);
     r.prototype=rp;
@@ -98,23 +98,23 @@ Y.extend = function(r, s, px, sx) {
 
     // assign constructor property
     if (s != Object && sp.constructor == OP.constructor) {
-	sp.constructor=s;
+	   sp.constructor=s;
     }
     
     // add prototype overrides
     if (px) {
-	Y.mix(rp, px, true);
+	   Y.mix(rp, px, true);
     }
     
     // add object overrides
     if (sx) {
-	Y.mix(r, sx, true);
+	   Y.mix(r, sx, true);
     }
 
     return r;
 };
 
-Y.loadFile =function(fileName) {
+Y.loadFile =function(fileName, extensions) {
 	var fs = require('fs'),
 		path = require('path'),
 		workingDir = process.cwd();
@@ -126,6 +126,7 @@ Y.loadFile =function(fileName) {
 			exports: exports,
 			module: module,
 			Base: this,
+			extensions: extensions ? extensions : null,
 			'__filename': __filename,
 			'__dirname': __dirname
 		};
@@ -136,7 +137,7 @@ Y.loadFile =function(fileName) {
 		return null;
 	}
 	process.chdir(workingDir);
-	return sandbox.exports;
+	return sandbox.module ? sandbox.module.exports : sandbox.exports;
 };
 
 
