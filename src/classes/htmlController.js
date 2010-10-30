@@ -23,10 +23,25 @@ H = HtmlController;
 H.NAME = "HtmlController",
 H.CONTENT_TYPE = "text/html";
 H.STATUS_OK = 200;
+H.STATUS_ERROR = 500;
+H.STATUS_NOTFOUND = 404;
 H.FINISH = 'finish';
+H.HEADERS = 'headers';
+H.BODY = 'body';
 
 H.prototype.doHeaders = function() {
     this.res.writeHead(H.STATUS_OK, {'Content-Type': H.CONTENT_TYPE});
+    this.server.emit(H.BODY);
+};
+
+H.prototype.doErrorHeaders = function() {
+    this.res.writeHead(H.STATUS_ERROR, {'Content-Type': H.CONTENT_TYPE});
+    this.server.emit(H.BODY);
+};
+
+H.prototype.do404Headers = function() {
+    this.res.writeHead(H.STATUS_NOTFOUND, {'Content-Type': H.CONTENT_TYPE});
+    this.server.emit(H.BODY);
 };
 
 H.prototype.doBody = function() {
@@ -35,9 +50,9 @@ H.prototype.doBody = function() {
 
 H.prototype.finalize = function() {
     if(this.server) {
-	this.server.emit(H.FINISH);
+	   this.server.emit(H.FINISH);
     } else {
-	require('util').log("no this.server");
+	   require('util').log("no this.server");
     }
 };
 

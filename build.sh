@@ -9,6 +9,7 @@ echo "start build"
 mkdir -p build/classes
 
 for i in ${FILES[@]}; do
+#    echo src/$i$JS
     $UGLIFY src/$i$JS > build/$i$JS
 done
 

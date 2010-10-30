@@ -125,13 +125,16 @@ Y.loadFile =function(fileName, extensions) {
 			process: process,
 			exports: exports,
 			module: module,
-			Base: this,
-			extensions: extensions ? extensions : null,
+			Base: extensions ? Y.mix( this, extensions, true) : this,
 			'__filename': __filename,
 			'__dirname': __dirname
 		};
 	process.chdir(path.dirname(path.normalize(fileName)));
-	Script.runInNewContext( content, sandbox, fileName);
+	try{
+	   Script.runInNewContext( content, sandbox, fileName);
+	} catch(e) {
+	   require('util').log("Y.loadFile::runInNewContext Exception:"+e);
+	}
 	if(!sandbox.exports) {
 		require('util').log("no export in "+fileName);
 		return null;

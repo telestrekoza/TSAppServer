@@ -14,11 +14,13 @@ J = JsonController;
 J.NAME = "JsonController";
 J.CONTENT_TYPE = "json/application";
 J.STATUS_OK = 200;
+J.BODY = 'body';
 
 Y.extend(J, HtmlController);
 
 J.prototype.doHeaders = function() {
     this.res.writeHead(J.STATUS_OK, {'Content-Type': J.CONTENT_TYPE});
+    this.server.emit(J.BODY);
 };
 
 J.prototype.toString = function() {
