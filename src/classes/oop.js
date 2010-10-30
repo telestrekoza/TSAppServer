@@ -144,6 +144,7 @@ Y.loadFile =function(fileName, extensions) {
 };
 
 
+exports.mix = Y.mix;
 exports.extend = Y.extend;
 exports.loadFile = Y.loadFile;
 

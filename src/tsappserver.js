@@ -10,10 +10,10 @@ var config	= require('./config').Config,
 require.paths.push( './modules');
 require.paths.push( LIBPATH );
 
-WebServer = function(config) {
+var WebServer = function(config) {
     var server = this,
-    	url = require('url'),
-    	querystring = require('querystring');
+        url = require('url'),
+        querystring = require('querystring');
 
     server.extensions = require('./classes');
     server.config = config;
@@ -21,20 +21,19 @@ WebServer = function(config) {
     server.GET = null;
     
     http.createServer( function(req, res ) {
-		if(config.debug) sys.log("start request");
+        if(config.debug) sys.log("start request");
 		server.init.call(server, req, res);
 		
 		req.on('data', function(data) {
-		    server.POST = querystring.parse(data);
+		    server.POST = querystring.parse(data.toString());
 		    //sys.puts(sys.inspect(server.POST));
 		});
 		req.on('end', function() {
-		    //sys.log("end");
-			if(req.method = "GET") {
+		    if(req.method == "GET") {
 				var link = url.parse(req.url, true);
 				server.GET = link.query;
 			}
-		    server.run.call(server);
+			server.run.call(server);
 		});
     }).listen( config.port, config.host );
     
@@ -57,7 +56,7 @@ WebServer.prototype.init = function( req, res ) {
     
     this.req = req;
     this.res = res;
-
+    
     ServerEvents.addListener( 'finish', function() {
         res.end('\n');
     });
@@ -117,7 +116,7 @@ WebServer.prototype.run = function() {
             self.result = result;
         };
 	
-    if(cfg.debug) sys.log("read file to execute:" + fileName);
+	if(cfg.debug) sys.log("read file to execute:" + fileName);
     fs.readFile( fileName, function( err, data ) {
 		//sys.log("done read file");
 		if( err ) {
@@ -221,7 +220,7 @@ WebServer.prototype.UrlRewrite = function( url ) {
  * Initialize
  */
 s = new WebServer( config );
-process.addListener('exit', s.onExit );
-process.addListener('SIGHUP', s.onExit );
+process.on('exit', s.onExit );
+process.on('SIGHUP', s.onExit );
 
 })();
