@@ -17,8 +17,6 @@ var WebServer = function(config) {
 
     server.extensions = require('./classes');
     server.config = config;
-    server.POST = null;
-    server.GET = null;
     
     http.createServer( function(req, res ) {
         if(config.debug) sys.log("start request");
@@ -56,6 +54,8 @@ WebServer.prototype.init = function( req, res ) {
     
     this.req = req;
     this.res = res;
+    this.GET = null;
+    this.POST = null;
     
     ServerEvents.addListener( 'finish', function() {
         res.end('\n');
