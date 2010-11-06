@@ -114,6 +114,36 @@ Y.extend = function(r, s, px, sx) {
     return r;
 };
 
+Y.Array = function(o, startIdx, arraylike) {
+    var t = (arraylike) ? 2 : YArray.test(o), 
+        l, a, start = startIdx || 0;
+
+    if (t) {
+        // IE errors when trying to slice HTMLElement collections
+        try {
+            return Native.slice.call(o, start);
+        } catch(e) {
+            a = [];
+            l = o.length;
+            for (; start<l; start++) {
+                a.push(o[start]);
+            }
+            return a;
+        }
+    } else {
+        return [o];
+    }
+};
+
+Y.bind = function(f, c) {
+    var xargs = arguments.length > 2 ? Y.Array(arguments, 2, true) : null;
+    return function () {
+        var fn =  (typeof f === 'string') ? c[f] : f, 
+            args = (xargs) ? xargs.concat(Y.Array(arguments, 0, true)) : arguments;
+        return fn.apply(c || fn, args);
+    };
+};
+
 Y.loadFile =function(fileName, extensions) {
 	var fs = require('fs'),
 		path = require('path'),
@@ -133,7 +163,7 @@ Y.loadFile =function(fileName, extensions) {
 	try{
 	   Script.runInNewContext( content, sandbox, fileName);
 	} catch(e) {
-	   require('util').log("Y.loadFile::runInNewContext Exception:"+e);
+	   require('util').log("Y.loadFile::runInNewContext "+fileName+" Exception:\n"+require('util').inspect(e));
 	}
 	if(!sandbox.exports) {
 		require('util').log("no export in "+fileName);
@@ -145,6 +175,7 @@ Y.loadFile =function(fileName, extensions) {
 
 
 exports.mix = Y.mix;
+exports.bind = Y.bind;
 exports.extend = Y.extend;
 exports.loadFile = Y.loadFile;
 
