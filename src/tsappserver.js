@@ -1,39 +1,41 @@
+/* copyright infos
+ *
+ *
+ */
 (function() {
 
-var config	= require('./config').Config,
-    sys		= require('util'),
+var config  = require('./config').Config,
+    sys     = require('util'),
     http	= require('http'),
     CustomEvent	= require('events').EventEmitter,
-    LIBPATH	= config.DOCROOT+'/node/lib',
+    LIBPATH = config.DOCROOT+'/node/lib',
     s;
 
 require.paths.push( './modules');
 require.paths.push( LIBPATH );
 
 var WebServer = function(config) {
-    var server = this,
-        url = require('url'),
+    var url = require('url'),
         querystring = require('querystring');
 
-    server.extensions = require('./classes');
-    server.config = config;
+    this.extensions = require('./classes');
+    this.config = config;
     
     http.createServer( function(req, res ) {
         if(config.debug) sys.log("start request");
-		server.init.call(server, req, res);
+		this.init(req, res);
 		
 		req.on('data', function(data) {
-		    server.POST = querystring.parse(data.toString());
-		    //sys.puts(sys.inspect(server.POST));
-		});
+		    this.POST = querystring.parse(data.toString());
+		}.bind(this));
 		req.on('end', function() {
 		    if(req.method == "GET") {
 				var link = url.parse(req.url, true);
-				server.GET = link.query;
+				this.GET = link.query;
 			}
-			server.run.call(server);
-		});
-    }).listen( config.port, config.host );
+			this.run();
+		}.bind(this));
+    }.bind(this)).listen( config.port, config.host );
     
     //obfuscate rights:
     if(config.debug && config.uid) sys.log("obfuscate rights to:"+config.uid);
@@ -45,12 +47,11 @@ var WebServer = function(config) {
 
 WebServer.prototype.init = function( req, res ) {
     var ServerEvents = new CustomEvent(),
-	   cfg 	= this.config,
-	   reqUrl  = (cfg.parseRewriteURL) ? this.UrlRewrite(req.url) : req.url,
-	   params  = this.params,
-	   url	= require('url').parse(reqUrl),
-	   path 	= url.pathname ? url.pathname : '/',
-	   self = this;
+        cfg 	= this.config,
+        reqUrl  = (cfg.parseRewriteURL) ? this.UrlRewrite(req.url) : req.url,
+        params  = this.params,
+        url	= require('url').parse(reqUrl),
+        path 	= url.pathname ? url.pathname : '/';
     
     this.req = req;
     this.res = res;
@@ -61,24 +62,11 @@ WebServer.prototype.init = function( req, res ) {
         res.end('\n');
     });
     
-    ServerEvents.addListener( 'headers', function() {
-        self.doHeaders.apply(self, arguments);
-    });
+    ServerEvents.addListener( 'headers', this.doHeaders.bind(this));
     
-    ServerEvents.addListener( 'body', function() {
-        self.doBody.call(self, arguments);
-    });
+    ServerEvents.addListener( 'body', this.doBody.bind(this));
 
-    function uncaughtException( err ) {
-	   process.removeListener('uncaughtException', uncaughtException);
-	   if(cfg.showError) {
-            res.write("Exception: " + err );
-	   }
-	   sys.puts(new Date() + " " + path +" Exception: " + err);
-	   res.end('\n');
-    }
-    process.addListener('uncaughtException', uncaughtException);
-    
+        
     if(cfg.debug) sys.log("check request url:"+ sys.inspect(url));
     if( path.charAt( path.length-1 ) == '/' ) {
 	   path = path + INDEX;
@@ -98,6 +86,27 @@ WebServer.prototype.init = function( req, res ) {
 WebServer.prototype.run = function() {
     var fs 	= require('fs'),
         cfg 	= this.config,
+        fileName= cfg.DOCROOT + this.path;
+    
+    if(cfg.debug) sys.log("read file to execute:" + fileName);
+    fs.readFile( fileName, function( err, data ) {
+        if(err) {
+            var msg = 'Not Found';
+            res.writeHead( 404, {'Content-Type': 'text/plain', 'Content-Length': msg.length} );
+            res.end( msg );
+            sys.log( 'File not found '+ path +' '+ err);
+            return;
+        } else {
+            if(cfg.debug) sys.log("start control handler");
+            process.nextTick( function() {
+                this.handleController(data);
+            }.bind(this));
+        }
+    }.bind(this));
+};
+        
+WebServer.prototype.handleController = function(data) {
+    var cfg 	= this.config,
         params  = this.params,
         path	= this.path,
         fileName= cfg.DOCROOT + path,
@@ -111,95 +120,104 @@ WebServer.prototype.run = function() {
         get     = this.GET,
         req     = this.req,
         res     = this.res,
-        self    = this,
-        setResult = function(result) {
-            self.result = result;
-        };
-	
-	if(cfg.debug) sys.log("read file to execute:" + fileName);
-    fs.readFile( fileName, function( err, data ) {
-		//sys.log("done read file");
-		if( err ) {
-		    var msg = 'Not Found';
-		    res.writeHead( 404, {'Content-Type': 'text/plain', 'Content-Length': msg.length} );
-		    res.end( msg );
-		    sys.log( 'File not found '+ path +' '+ err);
-		    return;
-		}
-		//sys.log("D:"+sys.inspect(extensions));
-		//get session
-		session.__init(function() {
-			  return req.getCookie.apply(req, arguments);
-		    }, function() {
-			  return res.setCookie.apply(res, arguments);
-		    }, function() {
-			  return res.clearCookie.apply(res, arguments);
-		    }, cfg.SESSIONPATH );
-	        
-	    Session.getSession();
-	    if(cfg.debug) sys.log("got session data");
-	
-	    var Script = process.binding('evals').Script,
-	        result,
-	        dirname = DOCROOT_PATH,
-	        sandbox = {
-	            process: process,
-	            module: module,
-	            require: require,
-	            Base: extensions,
-	            Session: Session,
-	            export: null,
-	            __filename: cfg.DOCROOT+path,
-	            __dirname: dirname
-	       };
-	
-	    if(cfg.debug) sys.log("run in new context");
-	    try{
-	        Script.runInNewContext( data, sandbox, path );
-	    } catch(e) {
-	        throw new Error(e);
-	    }
-	    if(cfg.debug) sys.log("Script sandboxed.\n"+sys.inspect(process.memoryUsage()));
-	    if(cfg.debug) sys.log("Result:"+sys.inspect(sandbox.export));
-	    if(typeof(sandbox.export) != "function") {
-	        sys.log(path+" : no export found in the file");
-	        res.writeHead(500, {});
-	        if(cfg.showError) {
-	            res.write("No export found !");
-	        }
-	        res.end();
-	        return;
-	    }
-	
-	    if(cfg.debug) sys.log("execute");
-	    //sys.log("server:"+sys.inspect( serverEvents ));
-	    //insert POST values to request
-	    if(post)
-	        req.POST = post;
-	    if(get)
-	        req.GET = get;
-	    setResult( new sandbox.export( serverEvents, req, res, params) );
-	    //sys.log("result:"+sys.inspect(result));
-	    serverEvents.emit('headers');
-	    if(cfg.debug) sys.log("done");
-	});
+        result;
+    //sys.log("D:"+sys.inspect(extensions));
+    //get session
+    session.__init(function() {
+    	  return req.getCookie.apply(req, arguments);
+        }, function() {
+    	  return res.setCookie.apply(res, arguments);
+        }, function() {
+    	  return res.clearCookie.apply(res, arguments);
+        }, cfg.SESSIONPATH );
+        
+    Session.getSession();
+    if(cfg.debug) sys.log("got session data");
+    
+    var dirname = DOCROOT_PATH,
+        sandbox = {
+            process: process,
+            module: module,
+            require: require,
+            Base: extensions,
+            Session: Session,
+            export: null,
+            __filename: cfg.DOCROOT+path,
+            __dirname: dirname
+       };
+    
+    if(cfg.debug) sys.log("run in new context");
+    process.nextTick(function() {
+        try{
+            this.runController( data, sandbox );
+        } catch(e) {
+            throw new Error(e);
+        }
+    }.bind(this));
+};
+
+WebServer.prototype.runController = function(data, sandbox) {
+    var Script = process.binding('evals').Script,
+        cfg     = this.config,
+        post    = this.POST,
+        get     = this.GET,
+        req     = this.req,
+        res     = this.res,
+        result;
+    
+    try {
+        Script.runInNewContext( data, sandbox, this.path );
+    } catch (e) {
+        var msg = 'Exception: ' + this.path + " : " + sys.inspect(e);
+        this.uncaughtException(msg);
+        return;
+    }
+    result = sandbox.export;
+    
+    if(cfg.debug) sys.log("Script sandboxed.\n"+sys.inspect(process.memoryUsage()));
+    if(cfg.debug) sys.log("Result:"+sys.inspect(result));
+    if(typeof(result) != "function") {
+        this.uncaughtException(this.path+" : no export found in the file");
+        return;
+    }
+    
+    if(cfg.debug) sys.log("execute");
+    if(post)
+        req.POST = post;
+    if(get)
+        req.GET = get;
+    
+    process.nextTick(function() {
+        var serverEvents = this.serverEvents,
+            cfg = this.config;
+        try {
+            this.result = new result( serverEvents, this.req, this.res, this.params);
+        } catch (e) {
+            var msg = 'Exception: ' + this.path + " : " + sys.inspect(e);
+            this.uncaughtException(msg);
+            return;
+        }
+        serverEvents.emit('headers');
+        if(cfg.debug) sys.log("done");
+    }.bind(this));
 };
 
 WebServer.prototype.doHeaders = function() {
     var result = this.result,
         res = this.res;
-    if( result && result.doHeaders )
+    if( result && result.doHeaders ) {
         result.doHeaders();
-	else {
+	} else {
 	    res.writeHead(200, {'Content-Type': 'text/plain'});
-	    this.serverEvents.emit('body');
+        this.serverEvents.emit('body');
 	}
 };
 
 WebServer.prototype.doBody = function() {
     var result = this.result;
-    if( result && result.doBody )
-            result.doBody();
+    if( result && result.doBody ) {
+        result.doBody();
+    }
 };
 
 WebServer.prototype.onExit = function() {
@@ -216,11 +234,34 @@ WebServer.prototype.UrlRewrite = function( url ) {
     return base;
 };
 
+WebServer.prototype.uncaughtException = function( err ) {
+    var msg1 = "Exception in " + this.path + ": ";
+        msg2 = err.message,
+        msg3 = err.stack,
+        res = this.res,
+        cfg = this.config;
+    if(res) {
+        res.writeHead(500, {});
+    }
+    if(res && cfg && cfg.showError) {
+		res.write(msg1);
+        res.write(msg2);
+        res.write(msg3);
+	}
+	sys.log(msg1 + '\n' + msg2 + '\n' + msg3);
+    if(res) {
+	    res.end('\n');
+    }
+};
+
 /*
  * Initialize
  */
 s = new WebServer( config );
 process.on('exit', s.onExit );
 process.on('SIGHUP', s.onExit );
+
+process.addListener('uncaughtException', s.uncaughtException.bind(s));
+
 
 })();
