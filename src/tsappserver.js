@@ -236,10 +236,13 @@ WebServer.prototype.UrlRewrite = function( url ) {
 
 WebServer.prototype.uncaughtException = function( err ) {
     var msg1 = "Exception in " + this.path + ": ";
-        msg2 = err.message,
-        msg3 = err.stack,
+        msg2 = err.message ? err.message : sys.inspect(err),
+        msg3 = err.stack ? err.stack : "",
         res = this.res,
         cfg = this.config;
+    sys.debug(msg1);
+    sys.debug(msg2);
+    sys.debug(msg3);
     if(res) {
         res.writeHead(500, {});
     }
@@ -248,8 +251,7 @@ WebServer.prototype.uncaughtException = function( err ) {
         res.write(msg2);
         res.write(msg3);
 	}
-	sys.log(msg1 + '\n' + msg2 + '\n' + msg3);
-    if(res) {
+	if(res) {
 	    res.end('\n');
     }
 };

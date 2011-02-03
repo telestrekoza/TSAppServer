@@ -163,8 +163,9 @@ Y.loadFile =function(fileName, extensions) {
 	try{
 		Script.runInNewContext( content, sandbox, fileName);
 	} catch(e) {
-		require('util').log("Y.loadFile::runInNewContext "+fileName+" Exception:\n"+require('util').inspect(e));
-	}
+	//	require('util').log("Y.loadFile::runInNewContext "+fileName+" Exception:\n"+require('util').inspect(e));
+	    throw new Error(e);
+    }
 	if(!sandbox.exports) {
 		require('util').log("no export in "+fileName);
 		return null;
